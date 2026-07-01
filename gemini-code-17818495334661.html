@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PIXEL KICK STRIKER: ULTIMATE INTEGRATION</title>
+    <style>
+        body {
+            font-family: 'Impact', 'Segoe UI', sans-serif;
+            background-color: #0d0e15;
+            color: #fff;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #ffcc00;
+            text-shadow: 0 0 10px #ffcc00, 0 0 20px #ff6600;
+            font-size: 2.8rem;
+            margin-bottom: 5px;
+            letter-spacing: 2px;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: #161925;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(255, 204, 0, 0.15);
+            border: 3px solid #4a3f1a;
+        }
+        
+        .menu-section {
+            background: #202437; padding: 15px; border-radius: 12px; margin: 15px 0; border: 1px solid #323856;
+        }
+        .menu-title { font-size: 1.2rem; color: #ffcc00; font-weight: bold; margin-bottom: 10px; }
+
+        .scoreboard {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+            background: #202437; padding: 15px; border-radius: 12px;
+            border: 2px solid #ffcc00; box-shadow: inset 0 0 10px rgba(255, 204, 0, 0.2);
+        }
+        .team-name { font-weight: bold; color: #8f9cae; font-size: 1.1rem; letter-spacing: 1px; }
+        .team-score { font-size: 3.5rem; font-weight: bold; color: #fff; text-shadow: 0 0 10px #ffaa00; }
+        .attempts { font-size: 2rem; letter-spacing: 6px; margin-top: 5px; color: #ffaa00; text-shadow: 0 0 8px #ffaa00; }
+
+        .rule-badge { display: inline-block; padding: 6px 20px; font-size: 1.5rem; font-weight: bold; border-radius: 30px; margin-bottom: 10px; }
+        .rule-pk { background: linear-gradient(135deg, #e65c00, #F9D423); color: #fff; }
+        .rule-fk { background: linear-gradient(135deg, #00c6ff, #0072ff); color: #fff; }
+
+        /* 🏟️ スタジアム空間 */
+        .stadium-wrap {
+            perspective: 1000px;
+            margin: 15px auto;
+            width: 100%;
+            max-width: 600px;
+        }
+        .stadium {
+            position: relative;
+            width: 100%;
+            height: 440px;
+            background: #1b4d3e;
+            border: 4px solid #fff;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        /* 🎥 キーパー主観カメラ（FKディフェンス時） */
+        .camera-gk-behind {
+            transform: rotateX(15deg) rotateZ(180deg) scale(1.05);
+        }
+
+        .goal-net {
+            position: absolute;
+            top: 15px;
+            left: 10%;
+            width: 80%;
+            height: 100px;
+            border: 6px solid #fff;
+            border-bottom: none;
+            background-color: rgba(255, 255, 255, 0.05);
+            background-image: linear-gradient(0deg, transparent 24%, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.15) 26%, transparent 27%),
+                              linear-gradient(90deg, transparent 24%, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.15) 26%, transparent 27%);
+            background-size: 16px 16px;
+            z-index: 1;
+        }
+
+        .pixel-char {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .camera-gk-behind .flip-target {
+            transform: rotateZ(180deg);
+        }
+
+        /* 🧤 ゴールキーパー */
+        .keeper {
+            position: absolute;
+            top: 75px;
+            left: 43%;
+            width: 80px;
+            height: 110px;
+            z-index: 5;
+            transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .keeper-head { width: 26px; height: 26px; background: #ffdbac; border-radius: 4px; border: 3px solid #000; }
+        .keeper-body {
+            width: 50px; height: 50px; border-radius: 4px 4px 0 0; border: 3px solid #000;
+            position: relative; display: flex; justify-content: center; align-items: center;
+            font-size: 16px; font-weight: bold; color: #fff;
+        }
+        .keeper-body::before, .keeper-body::after {
+            content: ''; position: absolute; top: 10px; width: 14px; height: 14px; background: #fff; border: 3px solid #000; border-radius: 4px;
+        }
+        .keeper-body::before { left: -16px; } .keeper-body::after { right: -16px; }
+        .keeper-legs { display: flex; justify-content: space-around; width: 40px; height: 25px; }
+        .leg { width: 14px; height: 100%; background: #111; border: 3px solid #000; border-top: none; }
+
+        /* 🏃 キッカー */
+        .kicker {
+            position: absolute;
+            bottom: 55px;
+            left: 45%;
+            width: 60px;
+            z-index: 4;
+            transition: all 0.3s;
+        }
+        .kicker-head { width: 22px; height: 22px; background: #ffdbac; border-radius: 4px; border: 2px solid #000; }
+        .kicker-body {
+            width: 40px; height: 42px; background: #ffcc00; border: 2px solid #000; border-radius: 4px;
+            display: flex; justify-content: center; align-items: center; color: #000; font-weight: bold; font-size: 14px;
+        }
+
+        /* 🧱 壁（ディフェンダー） */
+        .wall-container {
+            position: absolute;
+            top: 210px;
+            left: 32%;
+            width: 250px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            z-index: 3;
+            transition: transform 0.2s ease-out, opacity 0.3s ease;
+            opacity: 0;
+        }
+        .wall-player {
+            width: 34px; height: 80px; background: #ff5555; border: 2px solid #000; border-radius: 6px 6px 0 0;
+            box-shadow: 0 4px 4px rgba(0,0,0,0.3); display: flex; flex-direction: column; align-items: center;
+            font-size: 11px; font-weight: bold; color: white; padding-top: 4px;
+        }
+        .wall-player::after { content: ''; width: 14px; height: 14px; background: #ffdbac; border: 2px solid #000; border-radius: 50%; margin-top: 2px; }
+        .wall-jump { transform: translateY(-40px); }
+
+        /* ⚽ ボール */
+        .ball {
+            position: absolute;
+            bottom: 20px;
+            left: 47.5%;
+            width: 30px;
+            height: 30px;
+            background: #fff;
+            border-radius: 50%;
+            border: 3px solid #000;
+            box-shadow: 0 6px 0px rgba(0,0,0,0.4);
+            z-index: 6;
+        }
+
+        /* 📊 タイミングゲージ（弾丸シュート用ルーレット） */
+        #bullet-gauge-track {
+            position: relative; width: 90%; height: 24px; background: #202437;
+            border: 3px solid #323856; margin: 15px auto; border-radius: 6px; overflow: hidden; display: none;
+        }
+        #bullet-gauge-marker {
+            position: absolute; top: 0; width: 6px; height: 100%; background: #fff;
+            box-shadow: 0 0 8px #fff; z-index: 2;
+        }
+        .gauge-sweet-spot {
+            position: absolute; top: 0; left: 40%; width: 20%; height: 100%;
+            background: rgba(255, 51, 0, 0.5); border-left: 2px solid #ff3300; border-right: 2px solid #ff3300;
+        }
+
+        /* 🎥 アタック・ディフェンス軌道アニメーション */
+        @keyframes shootCurve {
+            0%   { bottom: 20px;  left: 47.5%; transform: scale(1); }
+            45%  { bottom: 220px; left: var(--mid-left); transform: scale(0.75); } 
+            100% { bottom: var(--target-bottom); left: var(--target-left); transform: scale(0.45); }
+        }
+        @keyframes shootKnuckle {
+            0%   { bottom: 20px;  left: 47.5%; transform: scale(1); }
+            30%  { bottom: 120px; left: calc(47.5% - 8%); transform: scale(0.85); }
+            65%  { bottom: 240px; left: calc(47.5% + 10%); transform: scale(0.65); }
+            100% { bottom: var(--target-bottom); left: var(--target-left); transform: scale(0.45); }
+        }
+        @keyframes defenseCurve {
+            0%   { bottom: 350px; left: 47.5%; transform: scale(0.45); }
+            45%  { bottom: 200px; left: var(--mid-left-rev); transform: scale(0.75); }
+            100% { bottom: var(--target-bottom-rev); left: var(--target-left-rev); transform: scale(1.1); }
+        }
+        @keyframes defenseKnuckle {
+            0%   { bottom: 350px; left: 47.5%; transform: scale(0.45); }
+            30%  { bottom: 260px; left: calc(47.5% + 10%); transform: scale(0.65); }
+            65%  { bottom: 160px; left: calc(47.5% - 12%); transform: scale(0.85); }
+            100% { bottom: var(--target-bottom-rev); left: var(--target-left-rev); transform: scale(1.1); }
+        }
+
+        #ui-panel { background: #1a1d2e; padding: 20px; border-radius: 12px; border: 2px solid #323856; }
+        #result-text { font-size: 1.6rem; font-weight: bold; height: 50px; margin: 5px 0; color: #ffcc00; }
+        
+        button {
+            border: none; padding: 10px 24px; font-size: 1.1rem; font-weight: bold; margin: 5px;
+            border-radius: 8px; cursor: pointer; background: linear-gradient(135deg, #ffcc00, #ff6600); color: #0d0e15;
+            box-shadow: 0 4px 0 #b38600; transition: all 0.1s;
+        }
+        button:active { transform: translateY(2px); box-shadow: 0 2px 0 #b38600; }
+        
+        .toggle-btn { background: #323856; color: #a8b2c1; box-shadow: 0 4px 0 #1b1e2e; }
+        .toggle-btn.active { background: linear-gradient(135deg, #00c6ff, #0072ff); color: #fff; box-shadow: 0 4px 0 #003799; }
+
+        .level-btn { color: #fff; width: 100%; max-width: 180px; margin: 5px; font-weight: bold;}
+        .level-easy { background: linear-gradient(135deg, #a8ff78, #78ffd6); color: #111; box-shadow: 0 4px 0 #3b7a57; }
+        .level-hard { background: linear-gradient(135deg, #ff9f43, #ff5252); box-shadow: 0 4px 0 #a73a3a; }
+        .level-expert { background: linear-gradient(135deg, #f857a6, #ff5858); box-shadow: 0 9px 0 #991f36; }
+
+        .controls-guide {
+            display: flex; justify-content: center; gap: 20px; margin-top: 15px;
+            background: #202437; padding: 12px; border-radius: 8px; border: 1px solid #323856; font-size: 0.9rem; color: #a8b2c1;
+        }
+        .key-badge { background: #ffcc00; color: #0d0e15; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>⚽ PIXEL KICK STRIKER ⚽</h1>
+    
+    <div id="level-select-screen">
+<div class="menu-section">
+    <div class="menu-title">MODE : PK ONLY</div>
+</div>
+        <div class="menu-section">
+            <div class="menu-title">STEP 2: CHOOSE LEVEL</div>
+            <div style="display: flex; justify-content: center; flex-wrap: wrap;">
+                <button class="level-btn level-easy" onclick="startGame('easy')">AMATEUR</button>
+                <button class="level-btn level-hard" onclick="startGame('hard')">PRO LEAGUE</button>
+                <button class="level-btn level-expert" onclick="startGame('expert')">WORLD FINAL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        <div style="display: flex; justify-content: center; align-items: center; gap: 15px;">
+            <span id="rule-badge" class="rule-badge">PK MODE</span>
+            <p id="turn-indicator" style="font-size: 1.1rem; letter-spacing: 1px; margin: 0;">ROUND 1</p>
+        </div>
+
+        <div class="scoreboard" style="margin-top: 10px;">
+            <div>
+                <div class="team-name">PLAYER</div>
+                <div id="score-player" class="team-score">0</div>
+                <div id="attempts-player" class="attempts">---</div>
+            </div>
+            <div style="font-size: 2.5rem; align-self: center; color: #323856;">VS</div>
+            <div>
+                <div id="cpu-team-name" class="team-name">GK</div>
+                <div id="score-cpu" class="team-score">0</div>
+                <div id="attempts-cpu" class="attempts">---</div>
+            </div>
+        </div>
+
+        <div id="bullet-gauge-track">
+            <div class="gauge-sweet-spot"></div>
+            <div id="bullet-gauge-marker"></div>
+        </div>
+
+        <div class="stadium-wrap">
+            <div id="stadium" class="stadium">
+                <div id="goal-net" class="goal-net"></div>
+                
+                <div id="keeper" class="keeper pixel-char">
+                    <div class="flip-target" style="display: flex; flex-direction: column; align-items: center;">
+                        <div class="keeper-head"></div>
+                        <div id="keeper-body" class="keeper-body">1</div>
+                        <div class="keeper-legs"><div class="leg"></div><div class="leg"></div></div>
+                    </div>
+                </div>
+
+                <div id="kicker" class="kicker pixel-char">
+                    <div class="flip-target">
+                        <div class="kicker-head"></div>
+                        <div id="kicker-body" class="kicker-body">10</div>
+                    </div>
+                </div>
+
+                <div id="wall" class="wall-container">
+                    <div class="wall-player flip-target">DF</div>
+                    <div class="wall-player flip-target">DF</div>
+                    <div class="wall-player flip-target">DF</div>
+                    <div class="wall-player flip-target">DF</div>
+                </div>
+
+                <div id="ball" class="ball"></div>
+            </div>
+        </div>
+
+        <div id="ui-panel">
+            <div id="result-text">READY...</div>
+            
+            <div class="controls-guide" id="guide-panel">
+                <div>【コース】 <span class="key-badge">←</span> / <span class="key-badge">↓</span> / <span class="key-badge">→</span></div>
+                <div>【魔球・キック】 <span class="key-badge">B</span> ブリッツカーブ /<span class="key-badge">N</span> 弾丸(ゲージ目押し)</div>
+            </div>
+            <div class="controls-guide hidden" id="defense-guide">
+                <div>【GKセーブ】 <span class="key-badge">←</span> / <span class="key-badge">↓</span> / <span class="key-badge">→</span> (反応猶予0.5秒)</div>
+            </div>
+
+            <button id="reset-btn" class="hidden" onclick="returnToLevelSelect()">BACK TO TITLE</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const KEEPER_CONFIG = {
+        'easy': { name: 'AMATEUR GK', color: '#4a526d', gkNum: '12', kickNum: '9', speed: '0.4s', wallJumpChance: 0.2 },
+        'hard': { name: 'PRO GK', color: '#0072ff', gkNum: '1', kickNum: '10', speed: '0.24s', wallJumpChance: 0.55 },
+        'expert': { name: 'LEGEND GK', color: '#ff2a54', gkNum: '1', kickNum: '7', speed: '0.14s', wallJumpChance: 0.8 }
+    };
+
+    let selectedMode = 'PK';
+    let state = null;
+    let currentKeeper = null;
+    let isButtonsDisabled = false;
+
+    // ゲージ・ルーレット管理
+    let gaugeInterval = null;
+    let gaugeMarkerPos = 0;
+    let gaugeDirection = 1;
+    let isAimingBullet = false;
+    let bulletChoice = null;
+
+    let allowPlayerRecovery = false;
+    // ===== リプレイ用 =====
+let replayData = null;
+    let playerFirstChoice = null;
+
+    const attackPos = {
+        'left':   { keeper: '15%', ballLeft: '17%', ballBottom: '380px' },
+        'center': { keeper: '43%', ballLeft: '47.5%', ballBottom: '385px' },
+        'right':  { keeper: '72%', ballLeft: '78%', ballBottom: '380px' }
+    };
+
+    const defensePos = {
+        'left':   { keeper: '72%', ballLeft: '74%', ballBottom: '105px' },
+        'center': { keeper: '43%', ballLeft: '47.5%', ballBottom: '110px' },
+        'right':  { keeper: '15%', ballLeft: '21%', ballBottom: '105px' }
+    };
+
+    function setGameMode(mode) {
+        selectedMode = mode;
+        document.getElementById('btn-mode-pk').classList.toggle('active', mode === 'PK');
+        document.getElementById('btn-mode-fk').classList.toggle('active', mode === 'FK');
+    }
+
+    window.addEventListener('keydown', function(event) {
+        if (!state || state.gameOver) return;
+
+        // 🧤 逆ブレ対応（0.5秒以内のコース修正）
+        if (!state.isPlayerTurn && allowPlayerRecovery) {
+            let recoveryChoice = null;
+            if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') recoveryChoice = 'left';
+            else if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') recoveryChoice = 'center';
+            else if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') recoveryChoice = 'right';
+
+            if (recoveryChoice && recoveryChoice !== playerFirstChoice) {
+                const keeperElement = document.getElementById('keeper');
+                keeperElement.style.left = (selectedMode === 'FK') ? defensePos[recoveryChoice].keeper : attackPos[recoveryChoice].keeper;
+                playerFirstChoice = recoveryChoice;
+                document.getElementById('result-text').innerText = "🧤⚡ SUPER REACTION !!";
+            }
+            return;
+        }
+
+        if (isButtonsDisabled) return;
+
+        // 弾丸シュートのゲージ目押しストップ
+        if (isAimingBullet && (event.key === 'n' || event.key === 'N')) {
+            clearInterval(gaugeInterval);
+            document.getElementById('bullet-gauge-track').style.display = 'none';
+            isAimingBullet = false;
+
+            // スウィートスポット判定 (ゲージ全体の40%〜60%の位置が当たり空間)
+            const isPerfectHit = (gaugeMarkerPos >= 40 && gaugeMarkerPos <= 60);
+            
+            if (isPerfectHit) {
+                document.getElementById('result-text').innerText = "⚡ PERFECT BULLET HIT !!";
+                playTurn(bulletChoice, 'bullet_perfect');
+            } else {
+                document.getElementById('result-text').innerText = "💥 TIMING MISS... (Weak Shot)";
+                playTurn(bulletChoice, 'bullet_miss');
+            }
+            return;
+        }
+
+        let choice = null;
+        if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') choice = 'left';
+        else if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') choice = 'center';
+        else if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') choice = 'right';
+
+        if (choice) {
+            if (state.isPlayerTurn) {
+                // キーごとの発動分岐
+                if (window.currentSpecialStyle === 'blitz_curve') {
+                    playTurn(choice, 'blitz_curve');
+                } else {
+                    playTurn(choice, 'normal');
+                }
+                window.currentSpecialStyle = null;
+            } else {
+                playTurn(choice, 'normal');
+            }
+        }
+    });
+
+    window.addEventListener('keyup', function(event) {
+        if (!state || state.gameOver || isButtonsDisabled || isAimingBullet || !state.isPlayerTurn) return;
+        
+        // B: ブリッツカーブ発動
+        if (event.key === 'b' || event.key === 'B') {
+            window.currentSpecialStyle = 'blitz_curve';
+            document.getElementById('result-text').innerText = "【⚡ BLITZ CURVE】 CHOOSE COURSE";
+            document.getElementById('result-text').style.color = '#ffcc00';
+        } 
+        // N: 弾丸シュート・ゲージ開始
+        else if (event.key === 'n' || event.key === 'N') {
+            window.currentSpecialStyle = 'bullet_shot';
+            document.getElementById('result-text').innerText = "👉 SELECT COURSE TO PREPARE";
+            document.getElementById('result-text').style.color = '#ffcc00';
+        }
+    });
+
+    function startGame(level) {
+        currentKeeper = KEEPER_CONFIG[level];
+        state = {
+            level: level, playerScore: 0, cpuScore: 0,
+            playerAttempts: [], cpuAttempts: [], round: 0,
+            isPlayerTurn: true, gameOver: false
+        };
+
+        document.getElementById('cpu-team-name').innerText = currentKeeper.name;
+const badge = document.getElementById('rule-badge');
+badge.innerText = 'PK MODE';
+badge.className = 'rule-badge rule-pk';        
+        document.getElementById('level-select-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+        
+        resetStadiumUI();
+        updateRoundText();
+        updateScoreboard();
+    }
+
+    function updateRoundText() {
+        const indicator = document.getElementById('turn-indicator');
+        const resultText = document.getElementById('result-text');
+        const stadium = document.getElementById('stadium');
+        const wall = document.getElementById('wall');
+        const goal = document.getElementById('goal-net');
+        const kicker = document.getElementById('kicker');
+        const kickerBody = document.getElementById('kicker-body');
+        const keeperBody = document.getElementById('keeper-body');
+
+        if (state.isPlayerTurn) {
+            stadium.classList.remove('camera-gk-behind');
+            goal.style.top = '15px'; goal.style.bottom = 'auto';
+            wall.style.top = '210px'; wall.style.bottom = 'auto';
+            kicker.style.bottom = '55px'; kicker.style.top = 'auto';
+            
+            wall.style.opacity = (selectedMode === 'FK') ? '1' : '0';
+            
+            keeperBody.style.backgroundColor = currentKeeper.color; keeperBody.innerText = currentKeeper.gkNum;
+            kickerBody.style.backgroundColor = '#ffcc00'; kickerBody.innerText = '10';
+
+            document.getElementById('guide-panel').classList.remove('hidden');
+            document.getElementById('defense-guide').classList.add('hidden');
+            indicator.innerHTML = `ROUND ${state.round + 1}: YOUR ATTACK`;
+            resultText.innerHTML = "SHOOT WITH COURSE OR SKILL!";
+            resultText.style.color = '#ffcc00';
+        } else {
+            if (selectedMode === 'FK') {
+                stadium.classList.add('camera-gk-behind');
+                goal.style.bottom = '15px'; goal.style.top = 'auto';
+                wall.style.bottom = '210px'; wall.style.top = 'auto';
+                kicker.style.top = '55px'; kicker.style.bottom = 'auto';
+                wall.style.opacity = '1';
+            } else {
+                stadium.classList.remove('camera-gk-behind');
+                goal.style.top = '15px'; goal.style.bottom = 'auto';
+                kicker.style.bottom = '55px'; kicker.style.top = 'auto';
+                wall.style.opacity = '0';
+            }
+
+            keeperBody.style.backgroundColor = '#22c55e'; keeperBody.innerText = '1';
+            kickerBody.style.backgroundColor = currentKeeper.color; kickerBody.innerText = currentKeeper.kickNum;
+
+            document.getElementById('guide-panel').classList.add('hidden');
+            document.getElementById('defense-guide').classList.remove('hidden');
+            indicator.innerHTML = `ROUND ${state.round + 1}: DEFEND THE NET!`;
+            resultText.innerHTML = "👀 WATCH THE KICKER AT THE TOP!";
+            resultText.style.color = "#ff3300";
+        }
+        resetStadiumUI();
+    }
+
+    function playTurn(choice, style) {
+        if (state.gameOver) return;
+
+        // 【N】弾丸シュートが選択されている場合、最初にコースを入れるとルーレット発動
+        if (window.currentSpecialStyle === 'bullet_shot' && state.isPlayerTurn && !isAimingBullet && (style === 'normal' || style === 'blitz_curve' || style === 'ground_shot')) {
+            bulletChoice = choice;
+            isAimingBullet = true;
+            gaugeMarkerPos = 0;
+            gaugeDirection = 1;
+            
+            document.getElementById('bullet-gauge-track').style.display = 'block';
+            document.getElementById('result-text').innerText = "🎯 PRESS [N] AT SWEET SPOT !";
+            
+            gaugeInterval = setInterval(() => {
+                gaugeMarkerPos += 4 * gaugeDirection;
+                if (gaugeMarkerPos > 98 || gaugeMarkerPos < 0) gaugeDirection *= -1;
+                document.getElementById('bullet-gauge-marker').style.left = gaugeMarkerPos + '%';
+            }, 18);
+            
+            return;
+        }
+
+        toggleButtons(true);
+
+        const keeperElement = document.getElementById('keeper');
+        const ballElement = document.getElementById('ball');
+        const wallElement = document.getElementById('wall');
+        const resultText = document.getElementById('result-text');
+
+        const choices = ['left', 'center', 'right'];
+        let cpuChoice = choices[Math.floor(Math.random() * 3)]; 
+        
+        // 壁のジャンプ判定
+        let wallJumps = (selectedMode === 'FK') && (Math.random() < currentKeeper.wallJumpChance);
+
+        if (state.isPlayerTurn) {
+            // ========================
+            // 🏹 PLAYER ATTACK ターン
+            // ========================
+            if (wallJumps) wallElement.classList.add('wall-jump');
+            let finalBallChoice = choice;
+            let isBlockedByWall = false;
+            let isMiss = false;
+
+            ballElement.style.animation = 'none'; ballElement.style.transition = 'none'; ballElement.offsetHeight;
+            let speedFactor = (selectedMode === 'PK') ? 0.6 : 1.0;
+
+            if (style === 'blitz_curve') {
+                let midLeft = (choice === 'center') ? '32%' : '47.5%';
+                ballElement.style.setProperty('--mid-left', midLeft);
+                ballElement.style.setProperty('--target-left', attackPos[choice].ballLeft);
+                ballElement.style.setProperty('--target-bottom', attackPos[choice].ballBottom);
+                ballElement.style.animation = `shootCurve ${1.1 * speedFactor}s forwards cubic-bezier(0.25, 1, 0.5, 1)`;
+            } else if (style === 'ground_shot') {
+                ballElement.style.transition = `all ${0.45 * speedFactor}s ease-out`;
+                ballElement.style.bottom = attackPos[choice].ballBottom; ballElement.style.left = attackPos[choice].ballLeft;
+                // ゴロシュートは壁がジャンプしていると抜けるが、着地してると弾かれるロジック
+                if (selectedMode === 'FK' && choice === 'center' && !wallJumps) {
+                    isBlockedByWall = true;
+                }
+            } else if (style === 'bullet_perfect') {
+                // ゲージ成功時: 壁をぶち抜く弾丸
+                ballElement.style.transition = 'all 0.1s linear';
+                ballElement.style.bottom = attackPos[choice].ballBottom; ballElement.style.left = attackPos[choice].ballLeft;
+            } else if (style === 'bullet_miss') {
+                // ゲージ失敗時: 威力が落ちてGK正面に飛ぶかブロックされる
+                finalBallChoice = 'center';
+                cpuChoice = 'center';
+                ballElement.style.transition = 'all 0.6s ease-in-out';
+                ballElement.style.bottom = attackPos['center'].ballBottom; ballElement.style.left = attackPos['center'].ballLeft;
+            } else {
+                let normTime = selectedMode === 'PK' ? 0.45 : 0.75;
+                ballElement.style.transition = `all ${normTime}s cubic-bezier(0.25, 1, 0.5, 1)`;
+                ballElement.style.bottom = attackPos[choice].ballBottom; ballElement.style.left = attackPos[choice].ballLeft;
+                if (selectedMode === 'FK' && choice === 'center' && wallJumps) isBlockedByWall = true;
+            }
+
+            keeperElement.style.left = attackPos[cpuChoice].keeper;
+// ===== リプレイ情報保存 =====
+replayData = {
+    mode: selectedMode,
+    style: style,
+    playerChoice: choice,
+    keeperChoice: cpuChoice
+};
+
+            setTimeout(() => {
+                if (isMiss) { resultText.innerHTML = "💥 OVER THE BAR!"; resultText.style.color = '#ff922b'; state.playerAttempts.push('✕'); }
+                else if (isBlockedByWall) { resultText.innerHTML = "🧍 HIT THE WALL! Blocked!"; resultText.style.color = '#ffaa00'; state.playerAttempts.push('✕'); }
+                else if (finalBallChoice === cpuChoice && style !== 'bullet_perfect') { resultText.innerHTML = "❌ SAVED BY GK!"; resultText.style.color = '#ff2a54'; state.playerAttempts.push('✕'); }
+                else { resultText.innerHTML = "⚽ GOOOOOAL!!"; resultText.style.color = '#ffcc00'; state.playerScore++; state.playerAttempts.push('◯'); }
+                updateScoreboard(); nextTurnPreparation();
+updateScoreboard();
+
+setTimeout(()=>{
+    playReplay();
+
+    setTimeout(()=>{
+        nextTurnPreparation();
+    },2200);
+
+},800);
+            }, style === 'ground_shot' ? 500 : (style === 'bullet_perfect' ? 150 : 800));
+
+        } else {
+            // ========================
+            // 🧤 PLAYER DEFENSE ターン
+            // ========================
+            playerFirstChoice = choice;
+            let cpuStyle = 'normal';
+            if (state.level !== 'easy') {
+                let randStyle = Math.random();
+                if (randStyle < 0.3) cpuStyle = 'curve';
+                else if (randStyle < 0.6) cpuStyle = 'knuckle';
+            }
+
+            if (wallJumps) wallElement.classList.add('wall-jump');
+            ballElement.style.animation = 'none'; ballElement.style.transition = 'none'; ballElement.offsetHeight;
+            let cpuFinalChoice = cpuChoice;
+
+            if (selectedMode === 'FK') {
+                if (cpuStyle === 'curve') {
+                    let midLeftRev = (cpuChoice === 'left') ? '60%' : '35%';
+                    ballElement.style.setProperty('--mid-left-rev', midLeftRev);
+                    ballElement.style.setProperty('--target-left-rev', defensePos[cpuChoice].ballLeft);
+                    ballElement.style.setProperty('--target-bottom-rev', defensePos[cpuChoice].ballBottom);
+                    ballElement.style.animation = 'defenseCurve 1.2s forwards cubic-bezier(0.25, 1, 0.5, 1)';
+                } else if (cpuStyle === 'knuckle') {
+                    cpuFinalChoice = choices[Math.floor(Math.random() * 3)];
+                    ballElement.style.setProperty('--target-left-rev', defensePos[cpuFinalChoice].ballLeft);
+                    ballElement.style.setProperty('--target-bottom-rev', defensePos[cpuFinalChoice].ballBottom);
+                    ballElement.style.animation = 'defenseKnuckle 1.4s forwards ease-in-out';
+                } else {
+                    ballElement.style.transition = 'all 0.75s cubic-bezier(0.25, 1, 0.5, 1)';
+                    ballElement.style.bottom = defensePos[cpuChoice].ballBottom; ballElement.style.left = defensePos[cpuChoice].ballLeft;
+                }
+                keeperElement.style.left = defensePos[playerFirstChoice].keeper;
+            } else {
+                ballElement.style.transition = 'all 0.45s ease-out';
+                ballElement.style.bottom = attackPos[cpuChoice].ballBottom; ballElement.style.left = attackPos[cpuChoice].ballLeft;
+                keeperElement.style.left = attackPos[playerFirstChoice].keeper;
+            }
+
+            allowPlayerRecovery = true;
+            setTimeout(() => { allowPlayerRecovery = false; }, 450);
+
+            setTimeout(() => {
+                allowPlayerRecovery = false;
+                if (selectedMode === 'FK' && cpuChoice === 'center' && !wallJumps && cpuStyle === 'normal') {
+                    resultText.innerHTML = "🧍 WALL BLOCK! Deflected by defenders!";
+                    resultText.style.color = '#00ffcc'; state.cpuAttempts.push('✕');
+                } else if (playerFirstChoice === cpuFinalChoice) {
+                    resultText.innerHTML = "🧤 MIRACLE SAVE!! Superb catch!";
+                    resultText.style.color = '#00ffcc'; state.cpuAttempts.push('✕');
+                } else {
+                    resultText.innerHTML = "😭 GOAL! Conceded...";
+                    resultText.style.color = '#ff2a54'; state.cpuScore++; state.cpuAttempts.push('◯');
+                }
+                state.round++; updateScoreboard(); nextTurnPreparation();
+            }, cpuStyle === 'normal' ? 800 : 1200);
+        }
+    }
+
+    function nextTurnPreparation() {
+        setTimeout(() => {
+            if (checkGameOver()) { endGame(); return; }
+            state.isPlayerTurn = !state.isPlayerTurn;
+            updateRoundText();
+            toggleButtons(false);
+        }, 1600);
+    }
+
+    function updateScoreboard() {
+        document.getElementById('score-player').innerText = state.playerScore;
+        document.getElementById('score-cpu').innerText = state.cpuScore;
+        const getDots = (attempts) => attempts.join('') + '-'.repeat(Math.max(0, 5 - attempts.length));
+        document.getElementById('attempts-player').innerText = getDots(state.playerAttempts);
+        document.getElementById('attempts-cpu').innerText = getDots(state.cpuAttempts);
+    }
+
+    function resetStadiumUI() {
+        const keeperElement = document.getElementById('keeper');
+        const ballElement = document.getElementById('ball');
+        const wallElement = document.getElementById('wall');
+        
+        ballElement.style.animation = 'none'; keeperElement.style.transition = 'none'; ballElement.style.transition = 'none';
+        wallElement.classList.remove('wall-jump');
+        ballElement.style.transform = 'scale(1)';
+        
+        if (!state.isPlayerTurn && selectedMode === 'FK') {
+            ballElement.style.bottom = '350px';
+            ballElement.style.left = '47.5%';
+            keeperElement.style.top = 'auto';
+            keeperElement.style.bottom = '75px';
+            keeperElement.style.left = '43%';
+        } else {
+            ballElement.style.bottom = '20px';
+            ballElement.style.left = '47.5%';
+            keeperElement.style.bottom = 'auto';
+            keeperElement.style.top = '75px';
+            keeperElement.style.left = '43%';
+        }
+        
+        keeperElement.offsetHeight; 
+        keeperElement.style.transition = `all ${currentKeeper.speed} cubic-bezier(0.25, 1, 0.5, 1)`;
+    }
+
+    function checkGameOver() {
+        const pLen = state.playerAttempts.length; const cLen = state.cpuAttempts.length;
+        if (state.round >= 5 && pLen === cLen && state.playerScore !== state.cpuScore) return true;
+        if (state.round < 5) {
+            const pRem = 5 - pLen; const cRem = 5 - cLen;
+            if (pLen > cLen && (state.playerScore > state.cpuScore + cRem || state.cpuScore > state.playerScore + pRem)) return true;
+            if (pLen === cLen && (state.playerScore > state.cpuScore + pRem || state.cpuScore > state.playerScore + cRem)) return true;
+        }
+        return false;
+    }
+
+    function endGame() {
+function playReplay(){
+
+    if(!replayData) return;
+
+    const ball=document.getElementById("ball");
+    const keeper=document.getElementById("keeper");
+    const result=document.getElementById("result-text");
+
+    result.innerHTML="📹 REPLAY";
+    result.style.color="#00e5ff";
+
+    // 元の位置へ
+    ball.style.transition="none";
+    keeper.style.transition="none";
+
+    ball.style.bottom="20px";
+    ball.style.left="47.5%";
+
+    keeper.style.left="43%";
+
+    void ball.offsetWidth;
+
+    // GK移動（0.4倍速）
+    keeper.style.transition="all 1.2s ease";
+
+    keeper.style.left=
+        attackPos[replayData.keeperChoice].keeper;
+
+    // ボール（0.4倍速）
+    ball.style.transition="all 1.4s ease";
+
+    ball.style.bottom=
+        attackPos[replayData.playerChoice].ballBottom;
+
+    ball.style.left=
+        attackPos[replayData.playerChoice].ballLeft;
+
+    setTimeout(()=>{
+
+        result.innerHTML="▶ REPLAY END";
+
+    },1600);
+
+}
+        state.gameOver = true;
+        document.getElementById('stadium').classList.remove('camera-gk-behind');
+        document.getElementById('guide-panel').classList.add('hidden');
+        document.getElementById('defense-guide').classList.add('hidden');
+        document.getElementById('bullet-gauge-track').style.display = 'none';
+        const resultText = document.getElementById('result-text');
+        
+        if (state.playerScore > state.cpuScore) {
+            resultText.innerHTML = `🏆 MATCH WINNER!! YOU WIN! 🏆`; resultText.style.color = '#ffcc00';
+        } else {
+            resultText.innerHTML = `😭 DEFEAT... Nice try!`; resultText.style.color = '#ff2a54';
+        }
+        document.getElementById('reset-btn').classList.remove('hidden');
+    }
+
+    function toggleButtons(disabled) { isButtonsDisabled = disabled; }
+
+    function returnToLevelSelect() {
+        document.getElementById('stadium').classList.remove('camera-gk-behind');
+        document.getElementById('game-screen').classList.add('hidden');
+        document.getElementById('reset-btn').classList.add('hidden');
+        document.getElementById('level-select-screen').classList.remove('hidden');
+        document.getElementById('result-text').style.color = '#ffcc00';
+        document.getElementById('result-text').innerHTML = "READY...";
+        toggleButtons(false);
+    }
+</script>
+
+</body>
+</html>
